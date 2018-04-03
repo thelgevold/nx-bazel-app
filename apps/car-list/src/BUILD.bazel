@@ -1,0 +1,35 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@angular//:index.bzl", "ng_module")
+
+ng_module(
+    name = "src",
+    srcs = glob(["app/*.ts", "*.ts"]),
+    tsconfig = "//:tsconfig.json",
+    assets = ["app/app.component.css", "app/app.component.html"],
+    deps = ["@rxjs"],
+)
+
+# Needed because the devserver only loads static files that appear under this
+# package.
+genrule(
+    name = "zone.js",
+    srcs = ["//:node_modules/zone.js/dist/zone.min.js"],
+    outs = ["zone.min.js"],
+    cmd = "cp $< $@",
+)
+
+load("@build_bazel_rules_typescript//:defs.bzl", "ts_devserver")
+
+ts_devserver(
+    name = "devserver",
+    data = ["//apps/car-list/src/assets"],
+    entry_module = "cars/apps/car-list/src/main",
+    scripts = ["//:angular_bundles"],
+    serving_path = "/bundle.min.js",
+    static_files = [
+        ":zone.js",
+        "index.html",
+    ],
+    deps = [":src"],
+)
